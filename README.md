@@ -10,6 +10,20 @@
 
 ---
 
+## Non-goals
+
+This tool is intentionally simple. It will never be:
+
+- An autonomous agent orchestration framework
+- A vector search or semantic retrieval platform
+- A cloud memory backend or SaaS service
+- A replacement for project management tools (Jira, Linear, Notion)
+- A plugin ecosystem
+
+If you need those things, this is the wrong tool. The value here is simplicity: plain files, Git, and a contract your agents can read.
+
+---
+
 ## Background
 
 The pattern is based on Andrej Karpathy's [LLM Wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f): instead of RAG over raw documents, you maintain a persistent wiki that LLMs incrementally build and query. This repo adapts that idea for teams — multiple agents, multiple projects, one shared knowledge base.
