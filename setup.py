@@ -259,7 +259,25 @@ def create_vault(config, vars_):
         })
         page.write_text(content, encoding="utf-8")
 
-    # Create raw/ directory (immutable source layer per Karpathy pattern)
+    # Create initial daily log entry (logs/<date>.md, not a template — filename must be real)
+    logs_dir = vault / "wiki" / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    log_file = logs_dir / f"{config['date']}.md"
+    log_file.write_text(
+        f"# Log — {config['date']}\n\n"
+        f"> Append-only. Never edit past entries.\n"
+        f"> Format: HH:MM | handle | project-slug\n\n"
+        f"---\n\n"
+        f"## setup | vault\n"
+        f"**Done:** Vault initialized\n"
+        f"**Changed:** all files\n"
+        f"**Decision:** none\n"
+        f"**Next:** open in Obsidian, install Obsidian Git plugin, create first project\n"
+        f"---\n",
+        encoding="utf-8",
+    )
+
+    # Create raw/ directory (immutable source layer)
     raw_dir = vault / "raw"
     raw_dir.mkdir(exist_ok=True)
     (raw_dir / ".gitkeep").touch()

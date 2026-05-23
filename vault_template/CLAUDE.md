@@ -33,29 +33,73 @@
 4. `wiki/projects/<this-project>/context.md` — project context
 
 ### On session END — write in this order:
-1. Append to `wiki/log.md` (append-only, never edit past entries)
+1. Append to `wiki/logs/YYYY-MM-DD.md` — today's date, create if missing
 2. Update `wiki/tasks.md` — mark done, add newly found tasks
 3. Update `wiki/projects/<this-project>/context.md` if architecture changed
 4. If architectural decision was made → create ADR in `wiki/decisions/`
 
 ### Log entry format (strict):
 ```
-## YYYY-MM-DD HH:MM | <handle> | <project-slug>
-**Done:** one-line summary
+## HH:MM | <handle> | <project-slug>
+**Done:** one-line summary of what actually happened
 **Changed:** file1, file2 (or "none")
 **Decision:** ADR-XXX title (or "none")
 **Next:** what logically follows
 ---
 ```
 
+> One entry per session. Date is the filename, not repeated in the entry.
+
+---
+
+## Write Boundaries
+
+Agents **MAY** write to:
+
+| Path | Rule |
+|------|------|
+| `wiki/logs/YYYY-MM-DD.md` | Append only. One entry per session. |
+| `wiki/tasks.md` | Mark tasks done, append new ones under "Discovered by Agent". |
+| `wiki/projects/<active-project>/context.md` | Update only if architecture or state changed. |
+| `wiki/decisions/ADR-XXX.md` | New file only — never edit an existing ADR. |
+| `wiki/sources/<slug>.md` | New file only (ingest protocol). |
+| `wiki/concepts/<slug>.md` | Create or update. |
+
+Agents **MUST NOT** touch:
+
+| Path | Reason |
+|------|--------|
+| `raw/` | Immutable source layer — humans add, agents read. |
+| `wiki/index.md` | Human-maintained index. `new-project.py` adds rows; agents don't. |
+| `CLAUDE.md` | Contract is human-owned. |
+| Past log entries | Append-only. Never edit what another session wrote. |
+| Other projects' `context.md` | Only write to the active project. |
+
+---
+
+## Memory Policy
+
+Write to the vault only when the information is **durable and confirmed**.
+
+**WRITE:**
+- Decisions that were made (architecture, tooling, process)
+- Discoveries that are reproducible and non-obvious
+- State changes that matter (migration applied, feature shipped, API changed)
+- Newly found tasks worth tracking
+
+**DO NOT WRITE:**
+- Transient thoughts or "I think maybe…"
+- Unverified assumptions
+- Speculative architecture ("we could do X someday")
+- Information already present in `context.md`
+- Step-by-step work narration ("now I'm editing file X…")
+- Anything you wouldn't want a new team member to read six months from now
+
+> If you're unsure whether something belongs in the vault — it doesn't.
+
 ---
 
 ## GitHub Workflow
-
-### Repository naming
-```
-<project-slug>        # main code repo
-```
 
 ### Branch strategy
 - `main` — always deployable, protected
@@ -84,7 +128,7 @@
 - [ ] manual test: [what you did]
 
 ## Vault
-- [ ] wiki/log.md appended
+- [ ] wiki/logs/YYYY-MM-DD.md appended
 - [ ] wiki/tasks.md updated
 - [ ] context.md updated if architecture changed
 ```
@@ -95,31 +139,12 @@
 
 | Content type | Location |
 |---|---|
-| Architecture decisions | `vault/wiki/decisions/ADR-XXX.md` |
-| Project context | `vault/wiki/projects/<slug>/context.md` |
-| Session log | `vault/wiki/log.md` |
-| Task board | `vault/wiki/tasks.md` |
-| Source material | `vault/raw/` |
+| Architecture decisions | `wiki/decisions/ADR-XXX.md` |
+| Project context | `wiki/projects/<slug>/context.md` |
+| Session logs | `wiki/logs/YYYY-MM-DD.md` |
+| Task board | `wiki/tasks.md` |
+| Source material | `raw/` |
 | Code docs / README | In the code repo |
-
-### README standard (every repo):
-```markdown
-# Project Name
-> One sentence description.
-
-## What it does
-[2-3 sentences]
-
-## Stack
-[list]
-
-## Setup
-[minimal steps to run]
-
-## Vault
-Context: vault/wiki/projects/<slug>/
-Contract: CLAUDE.md
-```
 
 ---
 
@@ -131,19 +156,17 @@ Contract: CLAUDE.md
   major refactor) → announce what you're about to do → wait for confirmation
   if change affects more than 50 lines
 - **Tests:** write before marking a task done
-- **Never touch `raw/`** — immutable source layer
-- **Never edit past entries in `log.md`** — append only
 
 ---
 
-## Ingest Protocol (Karpathy pattern)
+## Ingest Protocol
 
 When a new source is dropped into `raw/`:
 1. Read document, extract key takeaways
 2. Create `wiki/sources/<slug>.md` with summary
 3. Update related pages in `wiki/concepts/` or `wiki/projects/`
 4. Add entry to `wiki/index.md` sources table
-5. Append ingest record to `wiki/log.md`
+5. Append ingest record to today's log
 
 When a valuable query answer emerges → save as a permanent wiki page.
 

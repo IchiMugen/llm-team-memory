@@ -34,5 +34,5 @@
 |------|-------|------|
 
 ## Navigation
-- Session log: [[log]]
+- Session logs: [[logs/]] (one file per day)
 - Task board: [[tasks]]

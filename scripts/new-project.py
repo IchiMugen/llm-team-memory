@@ -129,27 +129,30 @@ def main():
             f.write(f"\n- [ ] {name}: initial setup and architecture @{lead} #{slug} priority:H\n")
         print(f"  ✓ wiki/tasks.md updated")
 
-    # 4. log.md
-    log = vault / "wiki" / "log.md"
+    # 4. Daily log — wiki/logs/YYYY-MM-DD.md (create if missing, append if exists)
+    logs_dir = vault / "wiki" / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    log = logs_dir / f"{DATE}.md"
     entry = (
-        f"\n## {DATE} {TIME} | new-project.py | {slug}\n"
+        f"## {TIME} | new-project.py | {slug}\n"
         f"**Done:** Project {name} created\n"
         f"**Changed:** wiki/index.md, wiki/tasks.md, wiki/projects/{slug}/context.md\n"
         f"**Decision:** none\n"
         f"**Next:** define architecture, fill context.md\n"
         f"---\n"
     )
-    with open(log, "r+", encoding="utf-8") as f:
-        content = f.read()
-        # insert after header (after first ---)
-        idx = content.find("---\n")
-        if idx != -1:
-            content = content[:idx+4] + entry + content[idx+4:]
-        else:
-            content += entry
-        f.seek(0)
-        f.write(content)
-    print(f"  ✓ wiki/log.md appended")
+    if not log.exists():
+        log.write_text(
+            f"# Log — {DATE}\n\n"
+            f"> Append-only. Never edit past entries.\n"
+            f"> Format: HH:MM | handle | project-slug\n\n"
+            f"---\n\n" + entry,
+            encoding="utf-8",
+        )
+    else:
+        with open(log, "a", encoding="utf-8") as f:
+            f.write("\n" + entry)
+    print(f"  ✓ wiki/logs/{DATE}.md appended")
 
     # 5. Local project CLAUDE.md
     project_dir = vault.parent / slug
