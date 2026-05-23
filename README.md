@@ -10,6 +10,12 @@
 
 ---
 
+## Background
+
+The pattern is based on Andrej Karpathy's [LLM Wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f): instead of RAG over raw documents, you maintain a persistent wiki that LLMs incrementally build and query. This repo adapts that idea for teams — multiple agents, multiple projects, one shared knowledge base.
+
+---
+
 ## What is this?
 
 One Obsidian vault, shared across your whole team. Every AI agent on every machine
@@ -84,6 +90,30 @@ This creates:
 - Entry in today's `wiki/logs/YYYY-MM-DD.md`
 - `my-project/CLAUDE.md` (inherits from vault contract)
 - Private GitHub repo + initial commit (requires `gh` CLI, skipped with `--no-github`)
+
+---
+
+## Add a team member
+
+```bash
+python $VAULT_PATH/scripts/add-member.py <github-username>
+
+# Optional flags:
+python $VAULT_PATH/scripts/add-member.py <github-username> --handle alice --agent "Cursor" --role Designer
+```
+
+This:
+- Sends a GitHub collaborator invite to the vault repo
+- Creates `wiki/team/<handle>.md` from the team template
+- Adds a row to `CLAUDE.md` team table
+- Commits and pushes everything
+
+The new member clones the vault once they accept the GitHub invite:
+```bash
+git clone https://github.com/<your-username>/vault vault
+```
+
+Requires `gh` CLI and a GitHub-hosted vault. For VPS-only setups, grant SSH access manually.
 
 ---
 

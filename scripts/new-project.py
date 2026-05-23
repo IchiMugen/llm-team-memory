@@ -155,7 +155,8 @@ def main():
     print(f"  ✓ wiki/logs/{DATE}.md appended")
 
     # 5. Local project CLAUDE.md
-    project_dir = vault.parent / slug
+    projects_base = Path(cfg.get("projects_base", str(vault.parent)))
+    project_dir = projects_base / slug
     project_dir.mkdir(exist_ok=True)
     claude_dst = project_dir / "CLAUDE.md"
     if claude_dst.exists():

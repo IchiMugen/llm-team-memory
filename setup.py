@@ -34,7 +34,7 @@ TEMPLATE_DIR = Path(__file__).parent / "vault_template"
 SCRIPTS_DIR = Path(__file__).parent / "scripts"
 
 AGENTS = ["Claude Code", "Codex", "Cursor", "Windsurf", "Other"]
-GIT_HOSTS = ["GitHub", "GitLab", "Gitea (self-hosted)", "Skip (local only)"]
+GIT_HOSTS = ["GitHub", "Skip (local only)"]
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -118,6 +118,10 @@ def collect_config():
     default_vault = str(Path.home() / "vault")
     config["vault_path"] = Path(ask("Vault location", default_vault)).expanduser().resolve()
 
+    # Projects base
+    default_projects = str(config["vault_path"].parent)
+    config["projects_base"] = Path(ask("Where to create new projects", default_projects)).expanduser().resolve()
+
     # Team lead
     config["lead_handle"] = ask("Your handle / username", "lead")
     config["lead_agent"] = ask_choice("Your AI agent", AGENTS)
@@ -141,16 +145,6 @@ def collect_config():
         config["git_user"] = ask("GitHub username")
         config["git_base_url"] = f"https://github.com/{config['git_user']}"
         config["git_ssh_base"] = f"git@github.com:{config['git_user']}"
-    elif config["git_host"] == "GitLab":
-        config["git_user"] = ask("GitLab username")
-        gitlab_host = ask("GitLab host", "gitlab.com")
-        config["git_base_url"] = f"https://{gitlab_host}/{config['git_user']}"
-        config["git_ssh_base"] = f"git@{gitlab_host}:{config['git_user']}"
-    elif config["git_host"] == "Gitea (self-hosted)":
-        gitea_host = ask("Gitea host (e.g. git.example.com)")
-        config["git_user"] = ask("Gitea username")
-        config["git_base_url"] = f"https://{gitea_host}/{config['git_user']}"
-        config["git_ssh_base"] = f"git@{gitea_host}:{config['git_user']}"
     else:
         config["git_user"] = ""
         config["git_base_url"] = ""
@@ -222,7 +216,7 @@ def create_vault(config, vars_):
     print(f"\n  Creating vault at {vault} ...")
 
     if vault.exists() and any(vault.iterdir()):
-        if not ask_yn(f"  {vault} is not empty. Continue?", default=False):
+        if not ask_yn(f"{vault} is not empty. Continue?", default=False):
             print("  ↳ Aborted.")
             sys.exit(0)
 
@@ -337,6 +331,7 @@ def write_config(config, vars_):
     """Save non-sensitive config for new-project.py to read."""
     cfg = {
         "vault_path":    str(config["vault_path"]),
+        "projects_base": str(config.get("projects_base", config["vault_path"].parent)),
         "git_user":      config.get("git_user", ""),
         "git_host":      config["git_host"],
         "git_ssh_base":  config.get("git_ssh_base", ""),
