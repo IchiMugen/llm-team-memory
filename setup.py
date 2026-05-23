@@ -373,6 +373,8 @@ def print_summary(config):
     print(f'     "Read CLAUDE.md then continue"')
     print(f"  4. Create your first project:")
     print(f"     python {vault}/scripts/new-project.py my-project")
+    print(f"  5. Link Claude memory (run once per device):")
+    print(f"     python {vault}/scripts/link-claude-memory.py")
     print(f"\n  Read ONBOARDING.md to share with team members.")
     print()
 

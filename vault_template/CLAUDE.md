@@ -28,15 +28,17 @@
 
 ### On session START — read in this order:
 1. This file (`CLAUDE.md`) ✓
-2. `wiki/index.md` — what exists in the vault
-3. `wiki/tasks.md` — current tasks and owners
-4. `wiki/projects/<this-project>/context.md` — project context
+2. `claude-memory/MEMORY.md` — cross-project memory (user profile, preferences, global decisions)
+3. `wiki/index.md` — what exists in the vault
+4. `wiki/tasks.md` — current tasks and owners
+5. `wiki/projects/<this-project>/context.md` — project context
 
 ### On session END — write in this order:
 1. Append to `wiki/logs/YYYY-MM-DD.md` — today's date, create if missing
 2. Update `wiki/tasks.md` — mark done, add newly found tasks
 3. Update `wiki/projects/<this-project>/context.md` if architecture changed
 4. If architectural decision was made → create ADR in `wiki/decisions/`
+5. Update `claude-memory/` if new durable facts emerged (user preferences, global decisions, new projects)
 
 ### Log entry format (strict):
 ```
@@ -64,6 +66,7 @@ Agents **MAY** write to:
 | `wiki/decisions/ADR-XXX.md` | New file only — never edit an existing ADR. |
 | `wiki/sources/<slug>.md` | New file only (ingest protocol). |
 | `wiki/concepts/<slug>.md` | Create or update. |
+| `claude-memory/` | Update user profile, preferences, global decisions. New files or update existing. |
 
 Agents **MUST NOT** touch:
 
