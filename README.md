@@ -117,6 +117,17 @@ Requires `gh` CLI and a GitHub-hosted vault. For VPS-only setups, grant SSH acce
 
 ---
 
+## Automatic session enforcement
+
+`scripts/link-claude-memory.py` registers a Claude Code **Stop hook** that fires at the end of every session:
+
+- If today's log is missing → agent gets the log template and must fill it before stopping
+- If vault has uncommitted changes → agent gets the commit command and must run it
+
+The agent cannot exit until the vault is updated. No reminders needed.
+
+---
+
 ## How agents use the vault
 
 Every agent session starts with:
