@@ -1,6 +1,6 @@
 # llm-team-memory
 
-> Karpathy-style shared memory for AI-assisted teams.  
+> Shared memory for AI-assisted teams.  
 > One setup wizard. Works with Claude Code, Codex, Cursor, or any agent with file access.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -12,11 +12,9 @@
 
 ## What is this?
 
-In April 2026, Andrej Karpathy published a pattern for building a knowledge base
-that an LLM maintains — not you. Drop sources in, ask questions, let the agent
-keep everything organised. The wiki compounds with every session.
-
-**This repo extends that pattern to teams:**
+One Obsidian vault, shared across your whole team. Every AI agent on every machine
+reads the same rules file and writes to the same log. The knowledge base grows
+with every session — without you maintaining it manually.
 
 - One shared Obsidian vault as the memory layer for all projects
 - Every AI agent on every machine reads the same contract (`CLAUDE.md`)
@@ -141,22 +139,6 @@ Works with any agent that can read and write files:
 | Cursor | Same, or set CLAUDE.md as rules file |
 | Windsurf | Same |
 | Custom | Point agent at CLAUDE.md as system context |
-
----
-
-## Bugs fixed vs. original
-
-This repo includes fixes over the initial release:
-
-| Bug | Fix |
-|-----|-----|
-| Unicode crash on Windows (cp1251) | Auto-reconfigure stdout/stdin to UTF-8 |
-| SSH URL missing `/` before `~` | Path normalised in `build_vars` and `init_git` |
-| Team table 3-col vs 4-col header mismatch | Always emit 4 columns, `—` when no GitHub handle |
-| `raw/` directory missing after setup | Created with `.gitkeep` in `create_vault` |
-| GitHub repo auto-created without opt-out | `--no-github` flag added to `new-project.py` |
-| `git checkout -b main` fails on git ≥2.28 default | Use `git symbolic-ref HEAD` instead |
-| `EOFError` on piped/scripted input | Caught alongside `KeyboardInterrupt` |
 
 ---
 
