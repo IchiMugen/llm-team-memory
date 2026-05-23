@@ -143,6 +143,7 @@ def collect_config():
 
     if config["git_host"] == "GitHub":
         config["git_user"] = ask("GitHub username")
+        config["vault_repo"] = ask("Vault repo name on GitHub", "vault")
         config["git_base_url"] = f"https://github.com/{config['git_user']}"
         config["git_ssh_base"] = f"git@github.com:{config['git_user']}"
     else:
@@ -320,11 +321,21 @@ def init_git(config):
         print("  → Run on VPS first: bash scripts/vault-sync-setup.sh")
         print("  → Then: git push -u origin main")
     elif config.get("git_host") == "GitHub" and check_dependency("gh"):
-        if ask_yn("  Create GitHub repo for vault?", default=False):
-            run(f'gh repo create {config["git_user"]}/vault --private --description "Karpathy-style shared memory for AI-assisted teams"', cwd=vault)
-            run(f'git remote add origin {config["git_ssh_base"]}/vault.git', cwd=vault)
-            run("git push -u origin main", cwd=vault)
-            print(f"  ✓ Pushed to {config['git_base_url']}/vault")
+        repo_name = config.get("vault_repo", "vault")
+        git_user = config["git_user"]
+        if ask_yn("Create GitHub repo for vault?", default=False):
+            check = subprocess.run(
+                f"gh repo view {git_user}/{repo_name}",
+                shell=True, capture_output=True
+            )
+            if check.returncode == 0:
+                print(f"  ✗ Repo {git_user}/{repo_name} already exists on GitHub.")
+                print(f"    Add remote manually: git remote add origin {config['git_ssh_base']}/{repo_name}.git")
+            else:
+                run(f'gh repo create {git_user}/{repo_name} --private --description "Shared memory vault"', cwd=vault)
+                run(f'git remote add origin {config["git_ssh_base"]}/{repo_name}.git', cwd=vault)
+                run("git push -u origin main", cwd=vault)
+                print(f"  ✓ Pushed to {config['git_base_url']}/{repo_name}")
 
 
 def write_config(config, vars_):
@@ -333,6 +344,7 @@ def write_config(config, vars_):
         "vault_path":    str(config["vault_path"]),
         "projects_base": str(config.get("projects_base", config["vault_path"].parent)),
         "git_user":      config.get("git_user", ""),
+        "vault_repo":    config.get("vault_repo", "vault"),
         "git_host":      config["git_host"],
         "git_ssh_base":  config.get("git_ssh_base", ""),
         "git_base_url":  config.get("git_base_url", ""),
@@ -351,7 +363,8 @@ def print_summary(config):
     print("═" * 60)
     print(f"\n  Vault:   {vault}")
     if config.get("git_base_url"):
-        print(f"  GitHub:  {config['git_base_url']}/vault")
+        repo_name = config.get("vault_repo", "vault")
+        print(f"  GitHub:  {config['git_base_url']}/{repo_name}")
     print(f"\n  Next steps:")
     print(f"  1. Open {vault} in Obsidian as a vault")
     print(f"  2. Install Obsidian Git plugin")
