@@ -32,10 +32,9 @@ Plugin settings:
 - Pull before push: ✓
 - Sync method: merge
 
-### 4. Add yourself to the team
-- Copy `wiki/team/_template.md` → save as `wiki/team/<your-handle>.md`
-- Fill in your role, agent, stack, timezone
-- Add your row to `CLAUDE.md` → Team table
+### 4. You're already added
+Your team lead ran `scripts/add-member.py` to invite you and create your team page.
+Open `wiki/team/<your-handle>.md` and fill in your timezone and stack.
 
 ### 5. Read the contract
 Open `CLAUDE.md`. Pay attention to:
@@ -60,6 +59,13 @@ At session end it writes to `wiki/logs/YYYY-MM-DD.md` (today's file).
 ```bash
 python $VAULT_PATH/scripts/new-project.py my-project "Short description"
 ```
+
+**Add a team member (team lead only):**
+```bash
+python $VAULT_PATH/scripts/add-member.py <github-username>
+# Optional: --handle <nick> --agent "Cursor" --role Developer
+```
+Sends a GitHub collaborator invite, creates their team page, updates CLAUDE.md, and commits everything.
 
 **Drop a source into the vault:**
 ```bash
