@@ -13,7 +13,7 @@
 |--------|------|-------|--------|
 {{TEAM_ROWS}}
 
-> To add a member: `python scripts/add-member.py <github-username> [--handle <nick>] [--agent "Cursor"] [--role Developer]`
+> To add a member: copy `wiki/team/_template.md` → rename → fill in → add row above.
 
 ---
 
