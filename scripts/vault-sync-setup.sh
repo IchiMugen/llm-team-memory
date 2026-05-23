@@ -1,0 +1,37 @@
+#!/bin/bash
+# vault-sync-setup.sh
+# Run ONCE on your VPS to create the bare git repo for vault sync.
+# Then follow the printed instructions on each team member's machine.
+
+VAULT_REPO="${1:-$HOME/repos/vault.git}"
+
+echo ""
+echo "=== Creating bare repo on VPS ==="
+mkdir -p "$VAULT_REPO"
+git init --bare "$VAULT_REPO"
+echo "Done: $VAULT_REPO"
+echo ""
+echo "================================================================"
+echo " LOCAL — first push (run on your machine, not the VPS):"
+echo "================================================================"
+echo ""
+echo "  cd /path/to/vault"
+echo "  git remote add origin ssh://USER@VPS_HOST$VAULT_REPO"
+echo "  git push -u origin main"
+echo ""
+echo "================================================================"
+echo " TEAM MEMBER — clone:"
+echo "================================================================"
+echo ""
+echo "  git clone ssh://USER@VPS_HOST$VAULT_REPO vault"
+echo "  # Open vault/ in Obsidian"
+echo ""
+echo "================================================================"
+echo " OBSIDIAN GIT PLUGIN SETTINGS:"
+echo "================================================================"
+echo ""
+echo "  Commit message:  {{hostname}}: {{date}}"
+echo "  Auto pull interval: 5 (minutes)"
+echo "  Pull before push: enabled"
+echo "  Sync method: merge"
+echo ""
