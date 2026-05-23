@@ -22,12 +22,13 @@ with every session — without you maintaining it manually.
 - New projects created with one command — vault entry + GitHub repo + local CLAUDE.md
 
 ```
-vault/                         ← shared memory (one git repo, Obsidian frontend)
+vault/
 ├── CLAUDE.md                  ← master contract for all agents
 ├── raw/                       ← source material (immutable, humans add)
 └── wiki/
     ├── index.md               ← agents read this first
-    ├── log.md                 ← append-only: what agents did
+    ├── logs/
+    │   └── YYYY-MM-DD.md      ← one file per day (no merge conflicts)
     ├── tasks.md               ← shared task board
     ├── projects/<slug>/       ← per-project context (auto-created)
     ├── team/                  ← one file per person
@@ -37,9 +38,6 @@ vault/                         ← shared memory (one git repo, Obsidian fronten
 
 project-a/                     ← code repo (separate git)
 └── CLAUDE.md                  ← inherits from vault CLAUDE.md
-
-project-b/
-└── CLAUDE.md
 ```
 
 ---
@@ -56,8 +54,6 @@ python setup.py
 > ```
 > set PYTHONUTF8=1 && python setup.py
 > ```
-> Python 3.7+ supports this env var. Or upgrade to Python 3.8+ and
-> use `python -X utf8 setup.py`.
 
 The wizard asks:
 - Where to create your vault
@@ -85,7 +81,7 @@ python $VAULT_PATH/scripts/new-project.py my-project "Short description" --no-gi
 This creates:
 - `vault/wiki/projects/my-project/context.md`
 - Entry in `wiki/index.md` and `wiki/tasks.md`
-- Record in `wiki/log.md`
+- Entry in today's `wiki/logs/YYYY-MM-DD.md`
 - `my-project/CLAUDE.md` (inherits from vault contract)
 - Private GitHub repo + initial commit (requires `gh` CLI, skipped with `--no-github`)
 
@@ -99,12 +95,28 @@ Read CLAUDE.md then continue
 ```
 
 The agent:
-1. Reads `CLAUDE.md` (team rules, GitHub workflow, code standards)
+1. Reads `CLAUDE.md` (team rules, write boundaries, memory policy)
 2. Reads `wiki/index.md` (what exists)
 3. Reads `wiki/tasks.md` (what needs doing)
 4. Reads `wiki/projects/<this-project>/context.md` (project state)
 5. Works
-6. Appends to `wiki/log.md`, updates `wiki/tasks.md`, updates context if needed
+6. Appends to `wiki/logs/YYYY-MM-DD.md`, updates `wiki/tasks.md`, updates context if needed
+
+---
+
+## Write boundaries and memory policy
+
+`CLAUDE.md` ships with explicit rules about what agents may and may not touch:
+
+**Agents may write to:** daily logs, tasks, active project context, new ADRs, new source summaries.
+
+**Agents must not touch:** `raw/`, `wiki/index.md`, `CLAUDE.md`, other projects' context, past log entries.
+
+**Memory policy — write only when durable and confirmed:**
+- Decisions made, reproducible discoveries, meaningful state changes
+- Not: assumptions, speculative architecture, step-by-step narration, duplicates
+
+This keeps the vault from rotting. A six-month-old vault should be as useful as a fresh one.
 
 ---
 
@@ -129,8 +141,6 @@ git clone ssh://user@your-vps/~/repos/vault.git vault
 ---
 
 ## Agent compatibility
-
-Works with any agent that can read and write files:
 
 | Agent | How to start |
 |---|---|
