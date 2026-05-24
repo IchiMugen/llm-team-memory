@@ -103,6 +103,18 @@ def main():
         dst.write_text(render(src.read_text(encoding="utf-8"), vars_), encoding="utf-8")
         print(f"  ✓ wiki/projects/{slug}/context.md")
 
+        state_dst = wiki_dir / "state.md"
+        state_dst.write_text(
+            f"# {name} — Current State\n"
+            f"> Updated by agent on every session end.\n\n"
+            f"## Last session\n—\n\n"
+            f"## Done\n—\n\n"
+            f"## Next\n- initial setup and architecture\n\n"
+            f"## Blocked\n—\n",
+            encoding="utf-8"
+        )
+        print(f"  ✓ wiki/projects/{slug}/state.md")
+
     # 2. Register in index.md
     index = vault / "wiki" / "index.md"
     if index.exists():

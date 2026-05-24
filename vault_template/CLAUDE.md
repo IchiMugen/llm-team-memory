@@ -31,14 +31,16 @@
 2. `claude-memory/MEMORY.md` — cross-project memory (user profile, preferences, global decisions)
 3. `wiki/index.md` — what exists in the vault
 4. `wiki/tasks.md` — current tasks and owners
-5. `wiki/projects/<this-project>/context.md` — project context
+5. `wiki/projects/<this-project>/context.md` — project architecture and decisions
+6. `wiki/projects/<this-project>/state.md` — what was done last session, what's next
 
 ### On session END — write in this order:
 1. Append to `wiki/logs/YYYY-MM-DD.md` — today's date, create if missing
-2. Update `wiki/tasks.md` — mark done, add newly found tasks
-3. Update `wiki/projects/<this-project>/context.md` if architecture changed
-4. If architectural decision was made → create ADR in `wiki/decisions/`
-5. Update `claude-memory/` if new durable facts emerged (user preferences, global decisions, new projects)
+2. Update `wiki/projects/<this-project>/state.md` — what was done, what's next, what's blocked
+3. Update `wiki/tasks.md` — mark done, add newly found tasks
+4. Update `wiki/projects/<this-project>/context.md` if architecture or stack changed
+5. If architectural decision was made → create ADR in `wiki/decisions/`
+6. Update `claude-memory/` if new durable facts emerged (user preferences, global decisions, new projects)
 
 ### Log entry format (strict):
 ```
@@ -62,7 +64,8 @@ Agents **MAY** write to:
 |------|------|
 | `wiki/logs/YYYY-MM-DD.md` | Append only. One entry per session. |
 | `wiki/tasks.md` | Mark tasks done, append new ones under "Discovered by Agent". |
-| `wiki/projects/<active-project>/context.md` | Update only if architecture or state changed. |
+| `wiki/projects/<active-project>/state.md` | Update every session — what was done, what's next, what's blocked. |
+| `wiki/projects/<active-project>/context.md` | Update only if architecture or stack changed. |
 | `wiki/decisions/ADR-XXX.md` | New file only — never edit an existing ADR. |
 | `wiki/sources/<slug>.md` | New file only (ingest protocol). |
 | `wiki/concepts/<slug>.md` | Create or update. |
