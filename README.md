@@ -79,7 +79,7 @@ The wizard asks:
 - Where to create your vault
 - Your handle and AI agent
 - Team members and their agents
-- Git hosting (GitHub / GitLab / Gitea / skip)
+- Git hosting (GitHub / skip)
 - VPS sync (optional — sets up a bare git repo for Obsidian Git)
 
 When it's done:
