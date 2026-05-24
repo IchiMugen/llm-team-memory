@@ -21,14 +21,13 @@ if hasattr(sys.stdout, "reconfigure"):
 
 DATE = datetime.now().strftime("%Y-%m-%d")
 TIME = datetime.now().strftime("%H:%M")
+SESSION_DIR = Path.home() / ".claude" / "session_starts"
 
 
 def find_vault() -> Path | None:
-    # Prefer location relative to this script (vault/scripts/this.py → vault/)
     here = Path(__file__).resolve().parent.parent
     if (here / ".vault-config.json").exists():
         return here
-    # Fallback: well-known location
     fallback = Path.home() / "vault"
     if (fallback / ".vault-config.json").exists():
         return fallback
@@ -43,6 +42,30 @@ def load_lead(vault: Path) -> str:
         return "lead"
 
 
+def get_session_start(session_id: str) -> datetime:
+    """Return session start time, recording it on first call."""
+    SESSION_DIR.mkdir(parents=True, exist_ok=True)
+    session_file = SESSION_DIR / f"{session_id}.txt"
+    if session_file.exists():
+        return datetime.fromisoformat(session_file.read_text().strip())
+    now = datetime.now()
+    session_file.write_text(now.isoformat())
+    return now
+
+
+def cleanup_old_sessions():
+    """Remove session start files older than 24 hours."""
+    if not SESSION_DIR.exists():
+        return
+    cutoff = datetime.now().timestamp() - 86400
+    for f in SESSION_DIR.glob("*.txt"):
+        try:
+            if f.stat().st_mtime < cutoff:
+                f.unlink()
+        except Exception:
+            pass
+
+
 def git_status(vault: Path) -> str:
     result = subprocess.run(
         "git status --porcelain",
@@ -51,12 +74,13 @@ def git_status(vault: Path) -> str:
     return result.stdout.strip()
 
 
-def log_written_today(vault: Path) -> bool:
+def log_written_this_session(vault: Path, session_start: datetime) -> bool:
+    """Check if today's log was modified after this session started."""
     log = vault / "wiki" / "logs" / f"{DATE}.md"
     if not log.exists():
         return False
     mtime = datetime.fromtimestamp(log.stat().st_mtime)
-    return mtime.date() == datetime.now().date()
+    return mtime > session_start
 
 
 def detect_project(cwd: str, vault: Path) -> str:
@@ -75,7 +99,6 @@ def main() -> None:
     except Exception:
         event = {}
 
-    # Prevent infinite loop — Claude Code sets this on retry
     if event.get("stop_hook_active"):
         sys.exit(0)
 
@@ -83,17 +106,21 @@ def main() -> None:
     if not vault:
         sys.exit(0)
 
+    session_id = event.get("session_id", "unknown")
+    session_start = get_session_start(session_id)
+    cleanup_old_sessions()
+
     lead = load_lead(vault)
     cwd = event.get("cwd", "")
     project = detect_project(cwd, vault)
     changes = git_status(vault)
-    log_ok = log_written_today(vault)
+    log_ok = log_written_this_session(vault, session_start)
 
     issues = []
 
     if not log_ok:
         issues.append(
-            f"No session log for today. Append to `wiki/logs/{DATE}.md`:\n"
+            f"No session log written since this session started. Append to `wiki/logs/{DATE}.md`:\n"
             f"```\n"
             f"## {TIME} | {lead} | {project}\n"
             f"**Done:** <one-line summary>\n"
@@ -112,7 +139,8 @@ def main() -> None:
             f'```\n'
             f'git -C "{vault}" add -A && '
             f'git -C "{vault}" commit -m "vault: {project} session {DATE}" && '
-            f'git -C "{vault}" push\n'
+            f'git -C "{vault}" push github main && '
+            f'git -C "{vault}" push origin main\n'
             f'```'
         )
 
