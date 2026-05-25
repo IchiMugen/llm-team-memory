@@ -11,7 +11,6 @@ Registered automatically by: scripts/link-claude-memory.py
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -66,14 +65,6 @@ def cleanup_old_sessions():
             pass
 
 
-def git_status(vault: Path) -> str:
-    result = subprocess.run(
-        "git status --porcelain",
-        shell=True, cwd=vault, capture_output=True, text=True
-    )
-    return result.stdout.strip()
-
-
 def log_written_this_session(vault: Path, session_start: datetime) -> bool:
     """Check if today's log was modified after this session started."""
     log = vault / "wiki" / "logs" / f"{DATE}.md"
@@ -113,13 +104,10 @@ def main() -> None:
     lead = load_lead(vault)
     cwd = event.get("cwd", "")
     project = detect_project(cwd, vault)
-    changes = git_status(vault)
     log_ok = log_written_this_session(vault, session_start)
 
-    issues = []
-
     if not log_ok:
-        issues.append(
+        issues = [
             f"No session log written since this session started. Append to `wiki/logs/{DATE}.md`:\n"
             f"```\n"
             f"## {TIME} | {lead} | {project}\n"
@@ -130,19 +118,9 @@ def main() -> None:
             f"---\n"
             f"```\n"
             f"If nothing meaningful happened, write: `**Done:** Q&A only, no changes`"
-        )
-
-    if changes:
-        issues.append(
-            f"Vault has uncommitted changes:\n```\n{changes}\n```\n"
-            f"Run:\n"
-            f'```\n'
-            f'git -C "{vault}" add -A && '
-            f'git -C "{vault}" commit -m "vault: {project} session {DATE}" && '
-            f'git -C "{vault}" push github main && '
-            f'git -C "{vault}" push origin main\n'
-            f'```'
-        )
+        ]
+    else:
+        issues = []
 
     if not issues:
         sys.exit(0)
