@@ -4,11 +4,11 @@ vault-sync.py
 Background daemon — watches vault for changes and syncs automatically.
 
 - Commits and pushes local changes within 5 seconds of last edit
-- Pulls remote changes every 2 minutes
+- Pulls remote changes every 30 seconds
 - Runs silently in background, no window
 
 Setup (run once per device):
-    python /path/to/vault/scripts/setup-autosync.py
+    python D:/vault/scripts/setup-autosync.py
 """
 from __future__ import annotations
 
@@ -79,6 +79,10 @@ def push():
 
 def main():
     log(f"vault-sync started — watching {VAULT}")
+
+    # Commit any pending changes immediately on startup (no debounce)
+    if has_changes():
+        push()
 
     last_pull = time.time()
     pending_since: float | None = None
