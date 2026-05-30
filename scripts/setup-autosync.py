@@ -5,9 +5,7 @@ Registers vault-sync.py to autostart on Windows login (no admin required).
 Run once per device after cloning the vault.
 
 Usage:
-    python /path/to/vault/scripts/setup-autosync.py
-
-On Linux/Mac: add vault-sync.py to cron instead (see output).
+    python D:/vault/scripts/setup-autosync.py
 """
 from __future__ import annotations
 
@@ -34,10 +32,13 @@ def find_pythonw() -> str:
 
 
 def create_vbs(pythonw: str, vbs_path: Path) -> None:
-    # VBScript launches pythonw silently (no window, no console)
+    # Watchdog loop: restarts vault-sync.py if it crashes
     content = (
         f'Set WshShell = CreateObject("WScript.Shell")\n'
-        f'WshShell.Run Chr(34) & "{pythonw}" & Chr(34) & " " & Chr(34) & "{SYNC_SCRIPT}" & Chr(34), 0, False\n'
+        f'Do\n'
+        f'    WshShell.Run Chr(34) & "{pythonw}" & Chr(34) & " " & Chr(34) & "{SYNC_SCRIPT}" & Chr(34), 0, True\n'
+        f'    WScript.Sleep 5000\n'
+        f'Loop\n'
     )
     vbs_path.write_text(content, encoding="utf-8")
 

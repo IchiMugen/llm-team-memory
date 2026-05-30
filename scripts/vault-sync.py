@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
 vault-sync.py
-Background daemon — watches vault for changes and syncs automatically.
+Background daemon - watches vault for changes and syncs automatically.
 
+- Commits pending changes immediately on startup
 - Commits and pushes local changes within 5 seconds of last edit
-- Pulls remote changes every 30 seconds
+- Pulls from all remotes every 2 minutes
+- Restarts itself when updated
 - Runs silently in background, no window
 
 Setup (run once per device):
-    python D:/vault/scripts/setup-autosync.py
+    python /path/to/vault/scripts/setup-autosync.py
 """
 from __future__ import annotations
 
@@ -19,20 +21,18 @@ from datetime import datetime
 from pathlib import Path
 
 VAULT = Path(__file__).resolve().parent.parent
-PULL_INTERVAL = 120  # seconds between pulls
-DEBOUNCE = 5         # seconds to wait after last change before committing
-CHECK_INTERVAL = 2   # seconds between status checks
+PULL_INTERVAL = 120
+DEBOUNCE = 5
+CHECK_INTERVAL = 2
 
 LOG = VAULT / "scripts" / "vault-sync.log"
 
 
 def log(msg: str):
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    line = f"[{ts}] {msg}\n"
     try:
         with LOG.open("a", encoding="utf-8") as f:
-            f.write(line)
-        # Keep log under 500 lines
+            f.write(f"[{ts}] {msg}\n")
         lines = LOG.read_text(encoding="utf-8").splitlines()
         if len(lines) > 500:
             LOG.write_text("\n".join(lines[-400:]) + "\n", encoding="utf-8")
@@ -53,57 +53,86 @@ def has_changes() -> bool:
     return bool(out)
 
 
+def get_remotes() -> list[str]:
+    _, out, _ = git("remote")
+    return [r for r in out.splitlines() if r.strip()]
+
+
+def ensure_git_identity():
+    _, name, _ = git("config user.name")
+    if not name:
+        git("config user.name vault-sync")
+        git("config user.email vault-sync@local")
+
+
 def pull():
-    code, out, err = git("pull --rebase --autostash")
-    if code != 0 and err:
-        log(f"PULL ERROR: {err}")
-    elif "Already up to date" not in out and out:
-        log(f"Pulled: {out[:120]}")
+    for remote in get_remotes():
+        code, out, err = git(f"pull {remote} main")
+        if code != 0 and err:
+            log(f"PULL {remote} ERROR: {err[:120]}")
+        elif "Already up to date" not in out and out:
+            log(f"Pulled from {remote}")
 
 
 def push():
+    ensure_git_identity()
     git("add -A")
     ts = datetime.now().strftime("%H:%M")
     code, out, err = git(f'commit -m "vault: auto-sync {ts}"')
-    if "nothing to commit" in out or code != 0:
+    if "nothing to commit" in out:
+        return
+    if code != 0:
+        log(f"Commit error: {err or out}")
         return
     log(f"Committed: {out[:80]}")
-
-    for remote in ["github", "origin"]:
+    for remote in get_remotes():
         code, _, err = git(f"push {remote} main")
-        if code != 0 and err and "does not appear to be a git repository" not in err:
-            log(f"Push {remote} error: {err[:100]}")
+        if code != 0 and err:
+            log(f"Push {remote} error: {err[:120]}")
         elif code == 0:
             log(f"Pushed to {remote}")
 
 
-def main():
-    log(f"vault-sync started — watching {VAULT}")
+def restart_if_updated(script_mtime: float) -> float:
+    current = Path(__file__).stat().st_mtime
+    if current != script_mtime:
+        log("vault-sync.py updated - restarting...")
+        subprocess.Popen(
+            [sys.executable, str(Path(__file__))],
+            creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+            close_fds=True,
+        )
+        sys.exit(0)
+    return script_mtime
 
-    # Commit any pending changes immediately on startup (no debounce)
-    if has_changes():
+
+def main():
+    log(f"vault-sync started - watching {VAULT}")
+    _, status, _ = git("status --porcelain")
+    log(f"Status: {status[:120] if status else 'clean'}")
+
+    if status:
         push()
 
     last_pull = time.time()
     pending_since: float | None = None
+    script_mtime = Path(__file__).stat().st_mtime
 
     while True:
         try:
             now = time.time()
 
-            # Pull
             if now - last_pull >= PULL_INTERVAL:
                 pull()
                 last_pull = now
+                script_mtime = restart_if_updated(script_mtime)
 
-            # Detect local changes
             if has_changes():
                 if pending_since is None:
                     pending_since = now
             else:
                 pending_since = None
 
-            # Push after debounce
             if pending_since is not None and now - pending_since >= DEBOUNCE:
                 push()
                 pending_since = None
